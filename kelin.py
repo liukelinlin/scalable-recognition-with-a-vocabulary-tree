@@ -35,7 +35,6 @@ def extract_descriptors(image, keypoints):
     return features
 
 
-
 '''
 image = "/Users/liukelian-kelian/Desktop/test_pic/0.jpg"
 kp, desc = find_keypoints_descriptors(image)
@@ -55,7 +54,7 @@ features = voc.extract_features(dataset)
 voc.fit(features)
 
 end = datetime.datetime.now()
-print("build voc tree: {}".format(end-start))
+print("build voc tree: {}".format(end - start))
 
 '''
 image_id_1 = "0"
@@ -87,19 +86,18 @@ db.index()
 db.save()
 
 end1 = datetime.datetime.now()
-print("index and save: {}".format(end1-end))
-
+print("index and save: {}".format(end1 - end))
 
 ''' Query '''
-for i in range(0, 7):
-    query = "{}.jpg".format(i)
-    print("query : {}".format(query))
-    scores = db.retrieve(query)
+image_names = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data/jpg"))
+image_names = [x for x in image_names if os.path.splitext(x)[1].lower() == ".jpg"]
+for img_name in image_names:
+    print("query : {}".format(img_name))
+    scores = db.retrieve(img_name)
     top4pairs = {k: scores[k] for k in list(scores)[:4]}
     print(top4pairs)
 
-
 end2 = datetime.datetime.now()
-print("total query: {}".format(end2-end1))
+print("total query: {}".format(end2 - end1))
 # db.show_results(query, scores, figsize=(150, 50))
 # plt.show()
