@@ -1,6 +1,7 @@
 import os
 import pickle
 import numpy as np
+import concurrent.futures
 import matplotlib.pyplot as plt
 import networkx as nx
 from sklearn.cluster import MiniBatchKMeans
@@ -29,9 +30,18 @@ class VocabularyTree(object):
     def extract_features(self, dataset):
         print("Extracting features...")
         func = lambda path: self.descriptor(dataset.read_image(path))
+
+        '''
         features = utils.show_progress(func, dataset)
         print("\n%d features extracted" % len(features))
         return np.array(features)
+        '''
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [executor.submit(func, img_path) for img_path in dataset.image_paths]
+            for future in futures:
+                results.extend(future.result())
+            return np.array(results)
 
     def fit(self, features, node=0, root=None, current_depth=0):
         """

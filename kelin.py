@@ -46,7 +46,8 @@ print(len(kp), desc.shape)
 start = datetime.datetime.now()
 
 ''' Train '''
-dataset = cbir.Dataset()
+jpg_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data/jpg")
+dataset = cbir.Dataset(jpg_dir)
 sift = cbir.descriptors.Sift()
 descriptor = cbir.descriptors.Sift()
 voc = cbir.encoders.VocabularyTree(n_branches=4, depth=4, descriptor=sift)
@@ -89,8 +90,7 @@ end1 = datetime.datetime.now()
 print("index and save: {}".format(end1 - end))
 
 ''' Query '''
-image_names = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data/jpg"))
-image_names = [x for x in image_names if os.path.splitext(x)[1].lower() == ".jpg"]
+image_names = dataset.image_paths
 for img_name in image_names:
     print("query : {}".format(img_name))
     scores = db.retrieve(img_name)

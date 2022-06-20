@@ -14,17 +14,13 @@ class Dataset():
                 must be in jpg format
         """
         self.path = folder
+        ''' image relative path: image name'''
         self.image_paths = [f for f in sorted(listdir(
             self.path)) if isfile(join(self.path, f))]
         self.subset = Subset(self)
 
     def __str__(self):
-        images = []
-        for i in range(len(self.image_paths)):
-            images.append(self.image_paths[i])
-            if i == 5:
-                break
-        return str(images)
+        return ",".join(self.image_paths)
 
     def __repr__(self):
         return str(self)
