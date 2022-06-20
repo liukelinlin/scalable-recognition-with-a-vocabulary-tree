@@ -1,6 +1,8 @@
 import os
 import sys
 import datetime
+import json
+import argparse
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
@@ -43,20 +45,6 @@ print(len(kp), desc.shape)
 
 # plt.figure(figsize=(15, 10))
 
-start = datetime.datetime.now()
-
-''' Train '''
-jpg_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data/jpg")
-dataset = cbir.Dataset(jpg_dir)
-sift = cbir.descriptors.Sift()
-descriptor = cbir.descriptors.Sift()
-voc = cbir.encoders.VocabularyTree(n_branches=4, depth=4, descriptor=sift)
-features = voc.extract_features(dataset)
-voc.fit(features)
-
-end = datetime.datetime.now()
-print("build voc tree: {}".format(end - start))
-
 '''
 image_id_1 = "0"
 image_id_2 = "3"
@@ -81,23 +69,73 @@ _ = ax[1].set_title("Image 2 TF-IDF")
 plt.tight_layout()
 '''
 
-''' Index '''
-db = cbir.Database(dataset, encoder=voc)
-db.index()
-db.save()
 
-end1 = datetime.datetime.now()
-print("index and save: {}".format(end1 - end))
-
-''' Query '''
-image_names = dataset.image_paths
-for img_name in image_names:
-    print("query : {}".format(img_name))
-    scores = db.retrieve(img_name)
-    top4pairs = {k: scores[k] for k in list(scores)[:4]}
-    print(top4pairs)
-
-end2 = datetime.datetime.now()
-print("total query: {}".format(end2 - end1))
 # db.show_results(query, scores, figsize=(150, 50))
 # plt.show()
+
+
+def main(args):
+    data_dir = args.input_data
+    gt_file = args.gt_file
+
+    '''Train'''
+    start = datetime.datetime.now()
+    dataset = cbir.Dataset(data_dir)
+    sift = cbir.descriptors.Sift()
+    voc = cbir.encoders.VocabularyTree(n_branches=args.branch, depth=args.depth, descriptor=sift)
+    features = voc.extract_features(dataset)
+    voc.fit(features)
+
+    end = datetime.datetime.now()
+    print("build voc tree: {}".format(end - start))
+
+    ''' Index '''
+    db = cbir.Database(dataset, encoder=voc)
+    db.index()
+    db.save()
+
+    end1 = datetime.datetime.now()
+    print("index and save: {}".format(end1 - end))
+
+    ''' Query '''
+    func = lambda file_name: os.path.splitext(file_name)[0]
+    results = {}
+    image_names = dataset.image_paths
+    for img_name in image_names:
+        print("query : {}".format(img_name))
+        scores = db.retrieve(img_name)
+        top4pairs = {k: scores[k] for k in list(scores)[:4] if scores[k] < args.score_threshold}
+        print(top4pairs)
+        results[func(img_name)] = [func(k) for k, v in top4pairs.items() if k != img_name]
+    end2 = datetime.datetime.now()
+    print("total query: {}".format(end2 - end1))
+    print(results)
+
+    if gt_file:
+        with open(gt_file, 'r') as fh:
+            gt = json.loads(fh.read())
+            top1_correct = 0
+            top3_correct = 0
+            for key, values in results.items():
+                if not values: continue
+                if values[0] in gt[key]:
+                    top1_correct += 1
+                    top3_correct += 1
+                    continue
+                for val in values:
+                    if val in gt[key]:
+                        top3_correct += 1
+
+            print("total queries: {}, top1 hit: {}, top3 hit: {}".format(len(results), top1_correct, top3_correct))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='demo')
+    parser.add_argument('-i', '--input_data', required=True, help='Input data directory')
+    parser.add_argument('-gt', '--gt_file', required=False, help='gt json file')
+    parser.add_argument('-br', '--branch', type=int, required=False, default=4, help='branch number')
+    parser.add_argument('-dep', '--depth', type=int, required=False, default=4, help='depth number')
+    parser.add_argument('-st', '--score_threshold', type=float, required=False, default=0.4, help='score threshold')
+
+    args = parser.parse_args()
+    main(args)
