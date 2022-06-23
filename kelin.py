@@ -118,12 +118,12 @@ def main(args):
             top3_correct = 0
             for key, values in results.items():
                 if not values: continue
-                if values[0] in gt[key]:
+                if key in gt and values[0] in gt[key]:
                     top1_correct += 1
                     top3_correct += 1
                     continue
                 for val in values:
-                    if val in gt[key]:
+                    if key in gt and val in gt[key]:
                         top3_correct += 1
 
             print("total queries: {}, top1 hit: {}, top3 hit: {}".format(len(results), top1_correct, top3_correct))
