@@ -114,6 +114,10 @@ def main(args):
     if gt_file:
         with open(gt_file, 'r') as fh:
             gt = json.loads(fh.read())
+
+            sum_topN_hit(gt, results, 1)
+            sum_topN_hit(gt, results, 3)
+
             top1_correct = 0
             top3_correct = 0
             for key, values in results.items():
@@ -125,8 +129,43 @@ def main(args):
                 for val in values:
                     if key in gt and val in gt[key]:
                         top3_correct += 1
+                        break
 
+            print("------- Summary ---------")
             print("total queries: {}, top1 hit: {}, top3 hit: {}".format(len(results), top1_correct, top3_correct))
+
+
+def check_arr_top_hit(src_arr, target_arr, top_n):
+    for i in range(top_n):
+        try:
+            if src_arr[i] in target_arr:
+                return True
+        except Exception as e:
+            return False
+
+    return False
+
+
+def sum_topN_hit(gt, results, n):
+    tp, fp, tn, fn = 0, 0, 0, 0
+    acc, total = 0, 0
+
+    for key, values in results.items():
+        if check_arr_top_hit(values, gt[key], n):
+            tp += 1
+            acc += 1
+        else:
+            fp += 1
+
+    for key, values in gt.items():
+        total += 1
+        if key not in results or not check_arr_top_hit(results[key], values, n):
+            fn += 1
+
+    print("--------- Top {} Hit ---------".format(n))
+    print("total: {}, acc: {}, acc_percent: {}".format(total, acc, acc / total))
+    print("tp: {}, fp: {}, precision: {}".format(tp, fp, tp / (tp + fp)))
+    print("tp: {}, fn: {}, recall: {}".format(tp, fn, tp / (tp + fn)))
 
 
 if __name__ == '__main__':
