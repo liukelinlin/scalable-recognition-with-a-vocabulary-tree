@@ -115,8 +115,8 @@ def main(args):
         with open(gt_file, 'r') as fh:
             gt = json.loads(fh.read())
 
-            sum_topN_hit(gt, results, 1)
-            sum_topN_hit(gt, results, 3)
+            sum_topN_hit(results, gt, 1)
+            sum_topN_hit(results, gt, 3)
 
             top1_correct = 0
             top3_correct = 0
@@ -146,7 +146,7 @@ def check_arr_top_hit(src_arr, target_arr, top_n):
     return False
 
 
-def sum_topN_hit(gt, results, n):
+def sum_topN_hit(results, gt, n):
     tp, fp, tn, fn = 0, 0, 0, 0
     acc, total = 0, 0
 
